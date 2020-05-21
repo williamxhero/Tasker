@@ -32,7 +32,7 @@ namespace Tasker
 
 		public void SetDateNow()
 		{
-			if (!Wd.SetLastYearMonthNow())
+			if (!Wd.SetYearMonAsNow())
 				throw new InvalidOperationException($"@ Wd.SetTMonNow() Failed.");
 
 			ResCtl.Init();

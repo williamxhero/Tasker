@@ -150,18 +150,61 @@ namespace Tasker
 			Ws.SaveAs(FilePath);
 		}
 
-		public int SetRow(List<string> Lines, int line)
+		public int SetRow(int row, List<string> Lines = null)
 		{
-			for (int CIdx = 1; CIdx <= Lines.Count; CIdx++)
+			if(Lines != null)
 			{
-				Cell(line, CIdx, Lines[CIdx - 1]);
+				for (int CIdx = 1; CIdx <= Lines.Count; CIdx++)
+				{
+					Cell(row, CIdx, Lines[CIdx - 1]);
+				}
 			}
-			return line+1;
+			return row+1;
 		}
 
-		public void Cell(int line, int col, object val)
+		public void Cell(int row, int col, object val)
 		{
-			Ws.Cells[line, col].Value2 = val.ToString();
+			Ws.Cells[row, col].Value2 = val.ToString();
+		}
+
+		public void AlignLeft(int row)
+		{
+			int CC = Ws.UsedRange.Cells.Columns.Count;
+			for (int CIdx = 1; CIdx <= CC; CIdx++)
+			{
+				Ws.Cells[row, CIdx].HorizontalAlignment =Excel.XlHAlign.xlHAlignLeft;
+			}
+		}
+
+		public void Merge(int col, int rowFrom, int rowTo)
+		{
+			Excel.Range Rng = Ws.Range[Ws.Cells[rowFrom, col], Ws.Cells[rowTo, col]];
+			Rng.Merge();
+		}
+
+		public void FontMsYH(int row)
+		{
+			int CC = Ws.UsedRange.Cells.Columns.Count;
+			for (int CIdx = 1; CIdx <= CC; CIdx++)
+			{
+				Ws.Cells[row, CIdx].Font.Name = "Microsoft YaHei Light";
+			}
+		}
+
+		public void Bold(int row, int col = 0, bool bold = true)
+		{
+			if(col > 0)
+			{
+				Ws.Cells[row, col].Font.Bold = bold;
+			}
+			else
+			{
+				int CC = Ws.UsedRange.Cells.Columns.Count;
+				for (int CIdx = 1; CIdx <= CC; CIdx++)
+				{
+					Ws.Cells[row, CIdx].Font.Bold = bold;
+				}
+			}
 		}
 
 		/// <summary>

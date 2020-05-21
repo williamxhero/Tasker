@@ -7,24 +7,25 @@ namespace Tasker
 		public uint Id;
 		public string Name;
 		public Status Stat;
+		public uint NeedId; //需求Id
 
 		//total points
-		public float RealTPts;
-		public float EstTPts;
+		public float RealPts;
+		public float EstPts;
 
 		public bool NotStarted { get { return Stat == Status.Wait; } }
-		public bool NotFinished { get { return Stat == Status.Doing || Stat == Status.Pause; } }
-		public bool IsFinished { get { return Stat == Status.Done || Stat == Status.Closed; } }
+		public bool NotFinished { get { return Stat == Status.Doing || Stat == Status.Pause || Stat == Status.Testing; } }
+		public bool IsFinished { get { return Stat == Status.Done; } }
 		public bool IsDeleted { get { return Stat == Status.Cancel; } }
 
-		public float TPoints { get { return (RealTPts == 0) ? EstTPts : RealTPts; } }
-		public bool TPointsIsEst { get { return RealTPts == 0; } }
-		public string TPointStr { get { return TPoints == 0 ? "?" : (TPointsIsEst ? $"{TPoints:0.0} ?" : $"{TPoints:0.0}"); } }
+		public float Points { get { return (RealPts == 0) ? EstPts : RealPts; } }
+		public bool PointsIsEst { get { return RealPts == 0; } }
+		public string PointStr { get { return Points == 0 ? "?" : (PointsIsEst ? $"{Points:0.0} ?" : $"{Points:0.0}"); } }
 		
 		public override string ToString()
 		{
 			string TaskN = (Name.Length > 4) ? $"{Name.Substring(0, 3)}..." : Name;
-			return $"[({Id})\"{TaskN}<{TPointStr}>\"{Stat}]";
+			return $"[({Id})\"{TaskN}<{PointStr}>\"{Stat}]";
 		}
 	}
 
@@ -68,7 +69,7 @@ namespace Tasker
 			get
 			{
 				var Comp = Phs.CompDeg > 0 ? Phs.CompDeg : 100f;
-				return Tasker.MathRound(Inf.TPoints * (Comp - Phs.LstCompDeg) / 100f, 1);
+				return Tasker.MathRound(Inf.Points * (Comp - Phs.LstCompDeg) / 100f, 1);
 			}
 		}
 
@@ -176,17 +177,24 @@ namespace Tasker
 				if (Inf.NotStarted) return Phs.LstCompDeg;
 
 				//已开始, 未结束：
-				var Days = Tasker.Wd.CountWDays(Res.StartedPhs, Tasker.Wd.DayN);
 				uint RemainPctg = 0;
-				if (Days < SchDaysPhs) {
-					// 预估周期内
-					RemainPctg = (uint)Tasker.MathRound((Days / SchDaysPhs * 100) - Phs.LstCompDeg);
-				} else {
-					// 超过预估时间
-					RemainPctg = (uint)Tasker.MathRound((100 - Phs.LstCompDeg) * 0.618f); 
+				//测试中，进度 99
+				if (Inf.Stat == Status.Testing)
+				{
+					RemainPctg = 100 - Phs.LstCompDeg - 1;
+				}
+				else
+				{
+					var Days = Tasker.Wd.CountWDays(Res.StartedPhs, Tasker.Wd.DayN);
+					if (Days < SchDaysPhs) {
+						// 预估周期内
+						RemainPctg = (uint)Tasker.MathRound((Days / SchDaysPhs * 100) - Phs.LstCompDeg);
+					} else {
+						// 超过预估时间
+						RemainPctg = (uint)Tasker.MathRound((100 - Phs.LstCompDeg) * 0.618f); 
+					}
 				}
 				var Total = Phs.LstCompDeg + RemainPctg;
-				//if (Total >= 100) Total = 99;
 				return Total;
 			}
 		}
@@ -293,8 +301,9 @@ namespace Tasker
 		Wait,
 		Doing,
 		Pause,
-		Done,
-		Closed
+		//DevDone,
+		Testing,
+		Done
 	}
 
 }

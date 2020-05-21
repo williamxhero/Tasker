@@ -163,6 +163,7 @@
     <Compile Include="Converter.cs" />
     <Compile Include="FileData.cs" />
     <Compile Include="Funtions.cs" />
+    <Compile Include="Productor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="MPXJExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -1,5 +1,7 @@
 ﻿using java.text;
 using System;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Tasker
 {
@@ -25,8 +27,8 @@ namespace Tasker
 				case Status.Wait: return "未开始";
 				case Status.Doing: return "开发中";
 				case Status.Pause: return "暂停中";
-				case Status.Done: return "测试中";
-				case Status.Closed: return "已完成";
+				case Status.Testing: return "测试中";
+				case Status.Done: return "已完成";
 			}
 			return "";
 		}
@@ -40,8 +42,8 @@ namespace Tasker
 				case Status.Wait: return 2;
 				case Status.Doing: return 3;
 				case Status.Pause: return 4;
-				case Status.Done: return 5;
-				case Status.Closed: return 6;
+				case Status.Testing: return 5;
+				case Status.Done: return 6;
 			}
 			return 0;
 		}
@@ -75,6 +77,16 @@ namespace Tasker
 			return Ret;
 		}
 
+		static Regex RepSpc = new Regex(@"\s{1,}", RegexOptions.IgnoreCase);
+
+		public static string ToName(this string str)
+		{
+			str = RepSpc.Replace(str, " ").Trim();
+			str = HttpUtility.HtmlDecode(str);
+			return str;
+		}
+
+
 		public static uint ToUint(this string str)
 		{
 			uint.TryParse(str.Trim(), out uint Ret);
@@ -93,10 +105,10 @@ namespace Tasker
 			{
 				case "wait": return Status.Wait;
 				case "doing": return Status.Doing;
-				case "done": return Status.Done;
+				case "done": return Status.Testing;
 				case "pause": return Status.Pause;
 				case "cancel": return Status.Cancel;
-				case "closed": return Status.Closed;
+				case "closed": return Status.Done;
 			}
 			return Status.No;
 		}

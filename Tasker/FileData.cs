@@ -7,7 +7,6 @@ namespace Tasker
 {
 	public class FileData
 	{
-
 		string GetTaskFileN(string Dt, string fN)
 		{
 			string Folder = $@"{Tasker.BaseFolder}\{Dt}";
@@ -46,9 +45,9 @@ namespace Tasker
 			public bool ShowTFinished = true; //[完成日期]
 			public bool ShowResource = true; //[资源名称]
 			public bool ShowPctg = true; //[完成百分比]
-			public bool ShowPctg_DoneAsTested = false; //完成度以测试为主
 			public bool ShowStatus = false; //[状态]
 			public bool ShowStatus_NoWait = false; //不显示“未开始”
+			public bool ShowStrName = false;
 		}
 
 		public void WriteTaskFile(string fileName, List<Task> ents, WTFConfig wtf=null)
@@ -83,7 +82,7 @@ namespace Tasker
 			{
 				Xls.EmptySheet();
 				Xls.SetSheetName(fileName);
-				var LineNo = Xls.SetRow(Titles, 1);
+				var LineNo = Xls.SetRow(1, Titles);
 
 				foreach (var Ent in ents)
 				{
@@ -117,7 +116,17 @@ namespace Tasker
 					if (Cfg.ShowActSch) Line.Add(Ent.ActDaysPhsStr);
 					if (Cfg.ShowTStarted) Line.Add(Ent.Res.StartedStr);
 					if (Cfg.ShowTFinished) Line.Add(Ent.Res.FinishedStr);
-					if (Cfg.ShowResource) Line.Add(Ent.ManResStr);
+					if (Cfg.ShowResource)
+					{
+						if (Cfg.ShowStrName)
+						{
+							Line.Add(Tasker.ResCtl.ManName2StrName(Ent.ManRes));
+						}
+						else
+						{
+							Line.Add(Ent.ManResStr);
+						}
+					}
 
 					if (Cfg.ShowStatus)
 					{
@@ -132,19 +141,6 @@ namespace Tasker
 					if (Cfg.ShowPctg)
 					{
 						uint FinishDeg = Ent.FinDegPhs;
-
-						if (Cfg.ShowPctg_DoneAsTested)
-						{
-							if (Ent.Inf.Stat == Status.Done)
-							{
-								FinishDeg = 99;
-							}
-							if (Ent.Inf.Stat == Status.Closed)
-							{
-								FinishDeg = 100;
-							}
-						}
-
 						//已开始，但是0%，改为3%
 						if (Ent.Inf.Stat == Status.Doing && FinishDeg == 0)
 						{
@@ -154,7 +150,7 @@ namespace Tasker
 						Line.Add($"{FinishDeg}%");
 					}
 
-					LineNo = Xls.SetRow(Line, LineNo);
+					LineNo = Xls.SetRow(LineNo, Line);
 				}
 
 				Xls.Save();
@@ -164,11 +160,11 @@ namespace Tasker
 		private static string GetPtsStr(Task Ent)
 		{
 			// 没有阶段点数
-			if (Ent.PtsPhs == Ent.Inf.TPoints)
+			if (Ent.PtsPhs == Ent.Inf.Points)
 			{
-				return Ent.Inf.TPointStr;
+				return Ent.Inf.PointStr;
 			}
-			return $"{Ent.PtsPhsStr}/{Ent.Inf.TPointStr}";
+			return $"{Ent.PtsPhsStr}/{Ent.Inf.PointStr}";
 		}
 
 		private static string GetIdStr(Task Ent)
@@ -216,12 +212,12 @@ namespace Tasker
 			using (var Xls = Tasker.XApp.Open(FNSN[0], FNSN[1]))
 			{
 				Xls.EmptySheet();
-				var LineNo = Xls.SetRow(Titles, 1);
+				var LineNo = Xls.SetRow(1, Titles);
 
 				foreach (var M in ms)
 				{
 					List<string> Line = new List<string> { M.Name.ToString(), M.TotalPts.ToString("0.0"), M.Spd.ToString("0.0") };
-					LineNo = Xls.SetRow(Line, LineNo);
+					LineNo = Xls.SetRow(LineNo, Line);
 				}
 
 				Xls.Save();

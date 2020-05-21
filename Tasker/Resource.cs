@@ -10,14 +10,17 @@ namespace Tasker
 
 		public ManName Name;
 		public ManPos Pos;
+		public string StrName = "--";
 		public float Spd = MinSpeed; //prevent div by 0
 
 		public override string ToString()
 		{
 			return $"({Name})Pos({Pos})Spd({Spd:0.0})";
 		}
+
+
 	}
-	
+
 	public class PosInfo
 	{
 		/// <summary>
@@ -112,9 +115,15 @@ namespace Tasker
 			return P.AveSpd;
 		}
 
+		public string ManName2StrName(ManName mn)
+		{
+			Persons.TryGetValue(mn, out Person P);
+			if (P != null) return P.StrName;
+			return "";
+		}
 
-		Dictionary<ManName, Person> Persons = new Dictionary<ManName, Person>();
-		Dictionary<ManPos, PosInfo> Position = new Dictionary<ManPos, PosInfo>();
+		public Dictionary<ManName, Person> Persons = new Dictionary<ManName, Person>();
+		public Dictionary<ManPos, PosInfo> Position = new Dictionary<ManPos, PosInfo>();
 
 		/// <summary>
 		/// Speed Last Month
@@ -181,17 +190,17 @@ namespace Tasker
 		{
 			Persons[ManName.HW] = new Person { Name = ManName.HW, Pos = ManPos.PM};
 
-			Persons[ManName.GYS] = new Person { Name = ManName.GYS, Pos = ManPos.DevUnity };
-			Persons[ManName.HHL] = new Person { Name = ManName.HHL, Pos = ManPos.DevUnity };
-			Persons[ManName.JZT] = new Person { Name = ManName.JZT, Pos = ManPos.DevUnity };
-			Persons[ManName.RBW] = new Person { Name = ManName.RBW, Pos = ManPos.DevUnity };
-			Persons[ManName.XG] = new Person { Name = ManName.XG, Pos = ManPos.DevUnity };
+			Persons[ManName.GYS] = new Person { Name = ManName.GYS, StrName = "谷泳升", Pos = ManPos.DevUnity };
+			Persons[ManName.HHL] = new Person { Name = ManName.HHL, StrName = "胡弘磊", Pos = ManPos.DevUnity };
+			Persons[ManName.JZT] = new Person { Name = ManName.JZT, StrName = "贾子婷", Pos = ManPos.DevUnity };
+			Persons[ManName.RBW] = new Person { Name = ManName.RBW, StrName = "任博文", Pos = ManPos.DevUnity };
+			Persons[ManName.XG] = new Person { Name = ManName.XG, StrName = "薛刚", Pos = ManPos.DevUnity };
 
-			Persons[ManName.ZSS] = new Person { Name = ManName.ZSS, Pos = ManPos.DevWeb };
-			Persons[ManName.LPB] = new Person { Name = ManName.LPB, Pos = ManPos.DevWeb };
+			Persons[ManName.ZSS] = new Person { Name = ManName.ZSS, StrName = "朱帅帅", Pos = ManPos.DevWeb };
+			Persons[ManName.LPB] = new Person { Name = ManName.LPB, StrName = "李鹏斌", Pos = ManPos.DevWeb };
 
-			Persons[ManName.SL] = new Person { Name = ManName.SL, Pos = ManPos.DevTest };
-			Persons[ManName.WZZ] = new Person { Name = ManName.WZZ, Pos = ManPos.DevTest };
+			Persons[ManName.SL] = new Person { Name = ManName.SL, StrName = "石磊", Pos = ManPos.DevTest };
+			Persons[ManName.WZZ] = new Person { Name = ManName.WZZ, StrName = "王珍珍", Pos = ManPos.DevTest };
 
 		}
 

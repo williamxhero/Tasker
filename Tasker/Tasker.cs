@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Web;
+
 
 namespace Tasker
 {
@@ -12,10 +11,45 @@ namespace Tasker
 			static public string InMon(string col) { return $"(t.{col} >= \"{Wd.Day1Str}\" and t.{col} <= \"{Wd.DayNStr}\")";}
 			//Finished from this Month
 			static public string FFTM { get { return $"t.finishedDate >= \"{Wd.Day1Str}\" OR ({StUnd})"; } }
+			static public string CITM { get { return  $"{InMon("closedDate")} and t.status = \"closed\""; } }
 			static public string StUnd { get { return $"t.status != \"done\" and t.status != \"closed\" and t.status != \"cancel\""; }}
 			static public string StUndInMon { get { return $"t.finishedDate > \"{Wd.DayNStr}\" OR ({StUnd})"; } }
 			static public string StFin { get { return "(t.status = \"done\" or t.status = \"closed\")"; } }
+			static public string Finished { get { return $"{StFin} and ({InMon("finishedDate")} or {InMon("realStarted")})";  } }
 		}
+
+		Dictionary<ManName, ManSpd> GetTesterSpeed()
+		{
+			var ManTotalPts = new Dictionary<ManName, ManSpd>();
+			var Ents = GetTasks(Sql.CITM);
+			if (Ents.Count == 0) return ManTotalPts;
+
+			foreach(var M in ResCtl.Persons)
+			{
+				if(M.Value.Pos == ManPos.DevTest)
+				{
+					ManTotalPts[M.Value.Name] = new ManSpd { Name = M.Value.Name};
+				}
+			}
+
+			foreach(var Ent in Ents)
+			{
+				if (ManTotalPts.ContainsKey(Ent.Res.Closer))
+				{
+					ManTotalPts[Ent.Res.Closer].TotalPts += Ent.Inf.Points;
+				}
+			}
+
+			var Days = Wd.CountWDays1ToN();
+			foreach(var Pair in ManTotalPts)
+			{
+				var Ms = ManTotalPts[Pair.Key];
+				Ms.Spd = Ms.TotalPts / Days;
+			}
+
+			return ManTotalPts;
+		}
+
 
 		/// <summary>
 		/// 定期发布的任务
@@ -40,7 +74,6 @@ namespace Tasker
 				ShowEstSch_NotWhenDone = true,
 				ShowStatus = true,
 				ShowStatus_NoWait = true,
-				ShowPctg_DoneAsTested = true,
 			};
 
 			Flr.WriteTaskFile("BUP", Ents, Fd);
@@ -71,7 +104,7 @@ namespace Tasker
 			List<Task> ZeroPts = new List<Task>();
 			foreach (var Ent in Ents)
 			{
-				if (Ent.Inf.RealTPts > 0f) continue;
+				if (Ent.Inf.RealPts > 0f) continue;
 				ZeroPts.Add(Ent);
 			}
 
@@ -87,17 +120,14 @@ namespace Tasker
 		/// </summary>
 		public void SaveFinishedTasks()
 		{
-			string SqlCond = $"{Sql.StFin} and ({Sql.InMon("finishedDate")} or {Sql.InMon("realStarted")})";
-
-			var Ents = GetTasks(SqlCond);
-
+			var Ents = GetTasks(Sql.Finished);
 			Flr.WriteTaskFile("完成", Ents);
-
-			SaveSpeed(Ents);
 		}
 
-		void SaveSpeed(List<Task> Ents)
+		public void SaveSpeed()
 		{
+			var Ents = GetTasks(Sql.Finished);
+
 			//只统计可用人手
 			Dictionary<ManName, ManSpd> ManPts = new Dictionary<ManName, ManSpd>();
 			ManSpd All = new ManSpd { Name = ManName.TEAM, Spd = 0, TotalPts = 0 };
@@ -125,6 +155,12 @@ namespace Tasker
 			{
 				M.Spd = M.TotalPts / Wd.WDaysInM;
 				MS.Add(M);
+			}
+
+			var Ts = GetTesterSpeed();
+			foreach(var Tr in Ts)
+			{
+				MS.Add(Tr.Value);
 			}
 
 			MS.Sort((msA, msB) => { return msA.Spd < msB.Spd ? 1 : (msA.Spd > msB.Spd ? -1 : 0); });
@@ -164,7 +200,7 @@ namespace Tasker
 		List<Task> GetTasks(string condition, bool inner=true)
 		{
 			List<Task> Ents = new List<Task>();
-			string Cont = GetHtml(condition);
+			string Cont = GetHtmlTasks(condition);
 			if (Cont.Contains("__GETTASK_ERROR__")) return Ents;
 
 			string[] Lines = Cont.Split("\n".ToCharArray());
@@ -181,27 +217,29 @@ namespace Tasker
 				var Cols = Line.Split("\"".ToCharArray());
 
 				var Ent = new Task { };
-				Ent.Inf.Id = Cols[0].ToUint();
-				Ent.Inf.Name = TrimName(Cols[1].ToString());
-				Ent.Inf.Stat = Cols[2].ToStat();
+				uint I = 0;
+				Ent.Inf.Id = Cols[I++].ToUint();
+				Ent.Inf.Name = Cols[I++].ToName();
+				Ent.Inf.Stat = Cols[I++].ToStat();
+				Ent.Inf.NeedId = Cols[I++].ToUint();
 				
-				Ent.Res.Taker = Cols[3].ToMan();
-				Ent.Res.StartedPhs = Cols[4].ToDt();
-				Ent.Res.Finisher = Cols[5].ToMan();
-				Ent.Res.FinishedPhs = Cols[6].ToDt();
-				Ent.Res.Closer = Cols[7].ToMan();
-				Ent.Res.Closed = Cols[8].ToDt();
+				Ent.Res.Taker = Cols[I++].ToMan();
+				Ent.Res.StartedPhs = Cols[I++].ToDt();
+				Ent.Res.Finisher = Cols[I++].ToMan();
+				Ent.Res.FinishedPhs = Cols[I++].ToDt();
+				Ent.Res.Closer = Cols[I++].ToMan();
+				Ent.Res.Closed = Cols[I++].ToDt();
 
-				Ent.Inf.RealTPts = Cols[9].ToFloat();
-				Ent.Phs.CompDeg = Cols[10].ToUint();
-				Ent.Phs.NextId = Cols[11].ToUint();
-				Ent.Phs.LastId = Cols[12].ToUint();
-				Ent.Inf.EstTPts = Cols[13].ToFloat();
+				Ent.Inf.RealPts = Cols[I++].ToFloat();
+				Ent.Phs.CompDeg = Cols[I++].ToUint();
+				Ent.Phs.NextId = Cols[I++].ToUint();
+				Ent.Phs.LastId = Cols[I++].ToUint();
+				Ent.Inf.EstPts = Cols[I++].ToFloat();
 
-				Ent.Spt.IterId = Cols[14].ToUint();
-				Ent.Spt.IterName = Cols[15].Trim();
-				Ent.Spt.ProjId = Cols[16].ToUint();
-				Ent.Spt.ProjName = Cols[17].Trim();
+				Ent.Spt.IterId = Cols[I++].ToUint();
+				Ent.Spt.IterName = Cols[I++].Trim();
+				Ent.Spt.ProjId = Cols[I++].ToUint();
+				Ent.Spt.ProjName = Cols[I++].Trim();
 
 				Ents.Add(Ent);
 			}
@@ -222,15 +260,6 @@ namespace Tasker
 			Ents = FillLastTask(Ents);
 
 			return Ents;
-		}
-
-		Regex RepSpc = new Regex(@"\s{1,}", RegexOptions.IgnoreCase);
-
-		string TrimName(string name)
-		{
-			name = RepSpc.Replace(name, " ").Trim();
-			name = HttpUtility.HtmlDecode(name);
-			return name;
 		}
 
 		List<Task> FillLastTask(List<Task> tsks)
@@ -273,7 +302,7 @@ namespace Tasker
 				if (T.Res.Closed.YearIsOK() && Wd.DateIsNotEarlier(T.Res.Closed))
 				{
 					T.Res.Closed = ZeroDate;
-					T.Inf.Stat = Status.Done;
+					T.Inf.Stat = Status.Testing;
 				}
 
 				if (NotStartedInM)
@@ -340,8 +369,8 @@ namespace Tasker
 					Exist.Res.StartedPhs = DtMin(Exist.Res.StartedPhs, T.Res.StartedPhs);
 					Exist.Res.FinishedPhs = DtMax(Exist.Res.FinishedPhs, T.Res.FinishedPhs);
 					Exist.Res.Closed = DtMax(Exist.Res.Closed, T.Res.Closed);
-					Exist.Inf.EstTPts += T.Inf.EstTPts;
-					Exist.Inf.RealTPts += T.Inf.RealTPts;
+					Exist.Inf.EstPts += T.Inf.EstPts;
+					Exist.Inf.RealPts += T.Inf.RealPts;
 				}
 				else
 				{

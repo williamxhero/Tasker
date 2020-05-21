@@ -29,7 +29,7 @@ namespace Tasker
 			return SetYearMon(year, month, -1, true);
 		}
 
-		public bool SetLastYearMonthNow()
+		public bool SetYearMonAsNow()
 		{
 			return SetYearMon(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, true); 
 		}
@@ -78,6 +78,11 @@ namespace Tasker
 			if (dt.Year > Tasker.Wd.Year) return true;
 			if (dt.Month > Tasker.Wd.Mon) return true;
 			return false;
+		}
+
+		public uint CountWDays1ToN()
+		{
+			return CountWDays(Day1, DayN);
 		}
 
 		public uint CountWDays(DateTime from, DateTime to)
