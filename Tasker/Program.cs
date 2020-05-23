@@ -5,10 +5,10 @@ namespace Tasker
 	class Program
 	{
 		static Tasker Tsk = new Tasker();
-		static bool ProductOnly = true;
-		static bool TaskerNow = true;
-		static int Year = 2020;
-		static int Month = 5;
+		static readonly bool ProductOnly = true;
+		static readonly bool TaskerNow = true;
+		static readonly int Year = 2020;
+		static readonly int Month = 5;
 
 		static void Main(string[] args)
 		{

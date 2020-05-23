@@ -276,8 +276,8 @@ namespace Tasker
 						case Stage.developing: return "开发中";
 						case Stage.developed: return "开发完成";
 						case Stage.testing: return "测试中";
-						case Stage.tested: return "测试完成"; 
-						case Stage.verified: return "验收完成";
+						case Stage.tested: return "已测试"; 
+						case Stage.verified: return "已验收";
 						case Stage.released: return "已发布";
 						case Stage.closed: return "已关闭";
 					}
@@ -292,7 +292,7 @@ namespace Tasker
 					else if (St == Status.changed) return "已变更";
 					else if(St== Status.closed) return "已关闭";
 					else if (St == Status.active) return StgString;
-					return "--";
+					return "";
 				}
 			}
 			public override string ToString()
